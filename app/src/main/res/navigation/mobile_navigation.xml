@@ -1,0 +1,127 @@
+<?xml version="1.0" encoding="utf-8"?>
+<navigation xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    app:startDestination="@+id/nav_01">
+
+    <fragment
+        android:id="@+id/nav_01"
+        android:name="com.KafSi.schedule.fragments.MainScheduleFragment"
+        android:label="1 курс"
+        tools:layout="@layout/fragment_schedule" />
+
+    <fragment
+        android:id="@+id/nav_02"
+        android:name="com.KafSi.schedule.fragments.MainScheduleFragment"
+        android:label="2 курс"
+        tools:layout="@layout/fragment_schedule" />
+
+    <fragment
+        android:id="@+id/nav_03"
+        android:name="com.KafSi.schedule.fragments.MainScheduleFragment"
+        android:label="3 курс"
+        tools:layout="@layout/fragment_schedule" />
+
+    <fragment
+        android:id="@+id/nav_04"
+        android:name="com.KafSi.schedule.fragments.MainScheduleFragment"
+        android:label="4 курс"
+        tools:layout="@layout/fragment_schedule" />
+
+    <fragment
+        android:id="@+id/nav_05"
+        android:name="com.KafSi.schedule.fragments.MainScheduleFragment"
+        android:label="5 курс"
+        tools:layout="@layout/fragment_schedule" />
+
+    <fragment
+        android:id="@+id/nav_06"
+        android:name="com.KafSi.schedule.fragments.MainScheduleFragment"
+        android:label="6 курс"
+        tools:layout="@layout/fragment_schedule" />
+
+    <fragment
+        android:id="@+id/nav_07"
+        android:name="com.KafSi.schedule.fragments.MainScheduleFragment"
+        android:label="6 курс"
+        tools:layout="@layout/fragment_schedule" />
+
+    <fragment
+        android:id="@+id/nav_08"
+        android:name="com.KafSi.schedule.fragments.MainScheduleFragment"
+        android:label="6 курс"
+        tools:layout="@layout/fragment_schedule" />
+
+    <fragment
+        android:id="@+id/nav_09"
+        android:name="com.KafSi.schedule.fragments.MainScheduleFragment"
+        android:label="6 курс"
+        tools:layout="@layout/fragment_schedule" />
+
+    <fragment
+        android:id="@+id/nav_10"
+        android:name="com.KafSi.schedule.fragments.MainScheduleFragment"
+        android:label="6 курс"
+        tools:layout="@layout/fragment_schedule" />
+
+    <fragment
+        android:id="@+id/nav_11"
+        android:name="com.KafSi.schedule.fragments.MainScheduleFragment"
+        android:label="6 курс"
+        tools:layout="@layout/fragment_schedule" />
+
+    <fragment
+        android:id="@+id/nav_12"
+        android:name="com.KafSi.schedule.fragments.MainScheduleFragment"
+        android:label="6 курс"
+        tools:layout="@layout/fragment_schedule" />
+
+    <fragment
+        android:id="@+id/nav_13"
+        android:name="com.KafSi.schedule.fragments.MainScheduleFragment"
+        android:label="6 курс"
+        tools:layout="@layout/fragment_schedule" />
+
+    <fragment
+        android:id="@+id/nav_14"
+        android:name="com.KafSi.schedule.fragments.MainScheduleFragment"
+        android:label="6 курс"
+        tools:layout="@layout/fragment_schedule" />
+
+    <fragment
+        android:id="@+id/nav_15"
+        android:name="com.KafSi.schedule.fragments.MainScheduleFragment"
+        android:label="6 курс"
+        tools:layout="@layout/fragment_schedule" />
+
+    <fragment
+        android:id="@+id/nav_16"
+        android:name="com.KafSi.schedule.fragments.MainScheduleFragment"
+        android:label="6 курс"
+        tools:layout="@layout/fragment_schedule" />
+
+    <fragment
+        android:id="@+id/nav_17"
+        android:name="com.KafSi.schedule.fragments.MainScheduleFragment"
+        android:label="6 курс"
+        tools:layout="@layout/fragment_schedule" />
+
+    <fragment
+        android:id="@+id/nav_18"
+        android:name="com.KafSi.schedule.fragments.MainScheduleFragment"
+        android:label="6 курс"
+        tools:layout="@layout/fragment_schedule" />
+
+    <fragment
+        android:id="@+id/nav_19"
+        android:name="com.KafSi.schedule.fragments.MainScheduleFragment"
+        android:label="6 курс"
+        tools:layout="@layout/fragment_schedule" />
+
+    <fragment
+        android:id="@+id/nav_20"
+        android:name="com.KafSi.schedule.fragments.MainScheduleFragment"
+        android:label="6 курс"
+        tools:layout="@layout/fragment_schedule" />
+
+</navigation>

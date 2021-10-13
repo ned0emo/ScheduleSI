@@ -1,0 +1,39 @@
+{
+  "project_info": {
+    "project_number": "126659080070",
+    "project_id": "schedule-13a05",
+    "storage_bucket": "schedule-13a05.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:126659080070:android:a129b3d17c9154d978c607",
+        "android_client_info": {
+          "package_name": "com.KafSi.schedule"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "126659080070-qmgaac96mcr2t8k6ub95aor8v93ddlqg.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDWKf0kA2ZuY4JDSokdxEK1tsd1fbLTpVE"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "126659080070-qmgaac96mcr2t8k6ub95aor8v93ddlqg.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

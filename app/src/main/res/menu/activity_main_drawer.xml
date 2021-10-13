@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    tools:showIn="navigation_view">
+
+    <group android:checkableBehavior="single">
+        <item
+            android:id="@+id/nav_01"
+            android:title="1 курс" />
+        <item
+            android:id="@+id/nav_02"
+            android:title="2 курс" />
+        <item
+            android:id="@+id/nav_03"
+            android:title="3 курс" />
+        <item
+            android:id="@+id/nav_04"
+            android:title="4 курс" />
+        <item
+            android:id="@+id/nav_05"
+            android:title="5 курс" />
+        <item
+            android:id="@+id/nav_06"
+            android:title="6 курс" />
+        <item
+            android:id="@+id/nav_07"
+            android:title="6 курс" />
+        <item
+            android:id="@+id/nav_08"
+            android:title="6 курс" />
+        <item
+            android:id="@+id/nav_09"
+            android:title="6 курс" />
+        <item
+            android:id="@+id/nav_10"
+            android:title="6 курс" />
+        <item
+            android:id="@+id/nav_11"
+            android:title="6 курс" />
+        <item
+            android:id="@+id/nav_12"
+            android:title="6 курс" />
+        <item
+            android:id="@+id/nav_13"
+            android:title="6 курс" />
+        <item
+            android:id="@+id/nav_14"
+            android:title="6 курс" />
+        <item
+            android:id="@+id/nav_15"
+            android:title="6 курс" />
+        <item
+            android:id="@+id/nav_16"
+            android:title="6 курс" />
+        <item
+            android:id="@+id/nav_17"
+            android:title="6 курс" />
+        <item
+            android:id="@+id/nav_18"
+            android:title="6 курс" />
+        <item
+            android:id="@+id/nav_19"
+            android:title="6 курс" />
+        <item
+            android:id="@+id/nav_20"
+            android:title="6 курс" />
+    </group>
+</menu>

@@ -1,0 +1,12 @@
+<resources>
+    <string name="app_name">Расписание ВСГУТУ</string>
+    <string name="nav_header_desc">Navigation header</string>
+
+    <string name="menu_load">  Загрузка  </string>
+
+    <!-- Preference Titles -->
+
+    <!-- Messages Preferences -->
+
+    <!-- Sync Preferences -->
+</resources>
