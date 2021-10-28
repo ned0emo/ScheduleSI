@@ -121,6 +121,19 @@
                 android:layout_height="20dp" />
 
             <Button
+                android:id="@+id/classesButton"
+                android:layout_width="300dp"
+                android:layout_height="40dp"
+                android:background="@drawable/button_design"
+                android:text="Аудитории"
+                android:textAlignment="center"
+                android:textSize="14sp"/>
+
+            <Space
+                android:layout_width="match_parent"
+                android:layout_height="20dp" />
+
+            <Button
                 android:id="@+id/settingsButton"
                 android:layout_width="300dp"
                 android:layout_height="40dp"

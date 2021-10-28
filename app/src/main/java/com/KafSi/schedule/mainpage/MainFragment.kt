@@ -15,13 +15,6 @@ import com.KafSi.schedule.teachers.FacultySelectActivity
 
 class MainFragment : Fragment() {
 
-    private lateinit var bakButton: Button
-    private lateinit var magButton: Button
-    private lateinit var extraButton1: Button
-    private lateinit var extraButton2: Button
-    private lateinit var settingsButton: Button
-    private lateinit var teachButton: Button
-
     override fun onCreateView(
         inflater: LayoutInflater,
         container: ViewGroup?,
@@ -32,16 +25,13 @@ class MainFragment : Fragment() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
 
-        bakButton = view.findViewById(R.id.bakButton)
-        magButton = view.findViewById(R.id.magButton)
-        extraButton1 = view.findViewById(R.id.extraButton1)
-        extraButton2 = view.findViewById(R.id.extraButton2)
-        settingsButton = view.findViewById(R.id.settingsButton)
-        teachButton = view.findViewById(R.id.teachButton)
+        val settingsButton: Button = view.findViewById(R.id.settingsButton)
+        val teachButton: Button = view.findViewById(R.id.teachButton)
 
-        val buttonMutableList = mutableListOf(
-            bakButton, magButton,
-            extraButton1, extraButton2
+        val buttonMutableList = mutableListOf<Button>(
+            view.findViewById(R.id.bakButton), view.findViewById(R.id.magButton),
+            view.findViewById(R.id.extraButton1), view.findViewById(R.id.extraButton2),
+            view.findViewById(R.id.classesButton)
         )
 
         /**анимация прозрачности*/
@@ -50,8 +40,6 @@ class MainFragment : Fragment() {
         /**кнопки главного меню*/
         for (i in buttonMutableList) {
             i.setOnClickListener {
-                //i.startAnimation(animation)
-
                 val intent = Intent(requireContext(), HostViewActivity::class.java)
                 intent.putExtra("data", buttonMutableList.indexOf(i))
                 startActivity(intent)
@@ -60,16 +48,12 @@ class MainFragment : Fragment() {
 
         /**кнопка настроек*/
         settingsButton.setOnClickListener {
-            //settingsButton.startAnimation(animation)
-
             val intent = Intent(requireContext(), SettingsActivity::class.java)
             startActivity(intent)
         }
 
         /**кнопка учителей*/
         teachButton.setOnClickListener {
-            //teachButton.startAnimation(animation)
-
             PublicData.catalog = ""
             //val intent = Intent(requireContext(), TeachersActivity::class.java)
             val intent = Intent(requireContext(), FacultySelectActivity::class.java)

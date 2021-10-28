@@ -38,9 +38,9 @@ class MyTabFragment : Fragment() {
     ): View {
         weekPos = requireArguments().getInt("pos")
 
-        localData = try{
+        localData = try {
             (parentFragment as MainScheduleFragment).localData
-        }catch (e: Exception){
+        } catch (e: Exception) {
             (requireActivity() as FavoriteActivity).localData
         }
 
@@ -78,7 +78,7 @@ class MyAdapter(//для ресайклера!!!--------------------------------
         val item = LayoutInflater.from(parent.context)
             .inflate(R.layout.fragment_schedule_recycler_item, parent, false)
 
-        return MyTabFragmentHolder(
+        val holder = MyTabFragmentHolder(
             item,
             scheduleList,
             weekPos,
@@ -86,16 +86,22 @@ class MyAdapter(//для ресайклера!!!--------------------------------
             hideWeeksLayout,
             thisActivity
         )
+
+        holderList.add(holder)
+
+        return holder
     }
 
     override fun onBindViewHolder(holder: MyTabFragmentHolder, position: Int) {
-        holderList.add(holder)
+        //if (holderList.size >= itemCount) return
+
+        //holderList.add(holder)
+
         object : Thread() {
             override fun start() {
-                holder.bind(position, holderList)
+                holder.bind(holderList)
             }
         }.start()
-        //holder.bind(position, holderList)
     }
 
     override fun getItemCount() = if (scheduleList.size == 12) 6 else 7
@@ -125,7 +131,9 @@ class MyAdapter(//для ресайклера!!!--------------------------------
         private lateinit var viewAdapter: RecyclerView.Adapter<*>
         private lateinit var viewManager: RecyclerView.LayoutManager
 
-        fun bind(pos: Int, holderList: MutableList<MyTabFragmentHolder>) {
+        fun bind(holderList: MutableList<MyTabFragmentHolder>) {
+            val pos = this.absoluteAdapterPosition
+
             index += pos
 
             if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) {
@@ -209,10 +217,9 @@ class MyAdapter(//для ресайклера!!!--------------------------------
                     }
 
                     for (i in 1..7) {
-                        try{
+                        try {
                             lessonsList.add(scheduleList[index][i - PublicData.isTeacher])
-                        }
-                        catch(e: Exception){
+                        } catch (e: Exception) {
                             break
                         }
                     }
@@ -254,8 +261,10 @@ class MyAdapter(//для ресайклера!!!--------------------------------
                         })
 
                         viewManager = LinearLayoutManager(itemView.context)
-                        viewAdapter = ScheduleRecyclerAdapter(lessonsList, itemCount,
-                            currentLesson, thisActivity)
+                        viewAdapter = ScheduleRecyclerAdapter(
+                            lessonsList, itemCount,
+                            currentLesson, thisActivity
+                        )
                         recyclerView = lessonsRecycler.apply {
                             setHasFixedSize(true)
                             layoutManager = viewManager
@@ -361,10 +370,9 @@ class ScheduleRecyclerAdapter(
     }
 
     override fun onBindViewHolder(holder: ScheduleFragmentHolder, position: Int) {
-        try{
+        try {
             holder.bind(position, lessonsList[position])
-        }
-        catch (e: Exception){
+        } catch (e: Exception) {
             thisActivity.finish()
         }
     }

@@ -11,13 +11,6 @@ import com.KafSi.schedule.R
 
 class FacultySelectActivity : AppCompatActivity() {
 
-    private lateinit var siteText1: String
-    private lateinit var siteText2: String
-    private var facDepList: MutableList<Pair<List<String>, List<String>>> = mutableListOf()
-    private lateinit var recyclerView: RecyclerView
-    private lateinit var viewAdapter: RecyclerView.Adapter<*>
-    private lateinit var viewManager: RecyclerView.LayoutManager
-
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_faculty)
@@ -25,33 +18,33 @@ class FacultySelectActivity : AppCompatActivity() {
         object : Thread() {
             override fun run() {
                 val teachersScheduleData = TeacherScheduleData()
-                siteText1 = teachersScheduleData.siteText1
-                siteText2 = teachersScheduleData.siteText2
+                val siteText1 = teachersScheduleData.siteText1
+                val siteText2 = teachersScheduleData.siteText2
 
                 this@FacultySelectActivity.runOnUiThread {
                     run {
 
-                        findViewById<ProgressBar>(R.id.facActivityProgressBar).visibility = View.GONE
+                        findViewById<ProgressBar>(R.id.facActivityProgressBar).visibility =
+                            View.GONE
 
                         if (siteText1 == "Failed" || siteText2 == "Failed" ||
                             siteText1.indexOf("занятий") < 0 || siteText2.indexOf("занятий") < 0
                         ) {
-                            Toast.makeText(this@FacultySelectActivity, "Ошибка при загрузке расписания", Toast.LENGTH_LONG)
+                            Toast.makeText(
+                                this@FacultySelectActivity,
+                                "Ошибка при загрузке расписания",
+                                Toast.LENGTH_SHORT
+                            )
                                 .show()
                             return@runOnUiThread
                         }
 
-                        facDepList = teachersScheduleData.getFacDepList()
-
-                        viewManager = LinearLayoutManager(this@FacultySelectActivity)
-                        //создается объект адаптера для ресайклера--------------------------------------------------
-                        //он находится в файле FacDepAdapter
-                        viewAdapter = FacultySelectButtonsViewAdapter(facDepList, this@FacultySelectActivity)
-
-                        recyclerView = findViewById<RecyclerView>(R.id.facRecyclerView).apply {
+                        findViewById<RecyclerView>(R.id.facRecyclerView).apply {
                             setHasFixedSize(true)
-                            layoutManager = viewManager
-                            adapter = viewAdapter
+                            layoutManager = LinearLayoutManager(this@FacultySelectActivity)
+                            adapter = FacultySelectButtonsViewAdapter(
+                                teachersScheduleData.getFacDepList(), this@FacultySelectActivity
+                            )
                         }
                     }
                 }

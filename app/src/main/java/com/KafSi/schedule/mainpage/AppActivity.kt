@@ -6,6 +6,7 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat.startActivity
 import androidx.fragment.app.FragmentManager
 import androidx.viewpager.widget.ViewPager
+import com.KafSi.schedule.ClassesScheduleClass
 import com.KafSi.schedule.FavoriteActivity
 import com.KafSi.schedule.PublicData
 import com.KafSi.schedule.R
@@ -54,7 +55,7 @@ class AppActivity : AppCompatActivity() {
         try {
             for (i in fileList()) {
                 /**список с этой херней, с текстом из файлов по группам/преподам*/
-                if (i != "fav" && i != "1") {
+                if (i != "fav" && i.length > 2) {
                     j++
                     val favFile = getFileStreamPath("fav")
 

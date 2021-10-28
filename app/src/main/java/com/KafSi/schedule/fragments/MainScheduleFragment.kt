@@ -34,6 +34,7 @@ class MainScheduleFragment : Fragment(), AdapterView.OnItemSelectedListener {
     private lateinit var hmmText: TextView
     private lateinit var favoriteFloatButton: FloatingActionButton
     private lateinit var groupSpinner: Spinner
+    private lateinit var classesSchedule: Map<String, MutableList<MutableList<String>>>
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -67,6 +68,7 @@ class MainScheduleFragment : Fragment(), AdapterView.OnItemSelectedListener {
          * или страницу расписания со всеми группами будь то очники или заочники*/
         if (PublicData.siteText.indexOf("1 курс", 0, true) < 0
             && PublicData.siteText.indexOf("Факультет", 0, true) < 0
+            && !reqActivity.isClasses
         ) {
             Toast.makeText(
                 reqActivity,
@@ -81,10 +83,16 @@ class MainScheduleFragment : Fragment(), AdapterView.OnItemSelectedListener {
             return
         }
 
-        if (reqActivity.courseNum > -1) {
-            studLoad()
-        } else {
-            teachersLoad()
+        when {
+            reqActivity.isClasses -> {
+                classesLoad()
+            }
+            reqActivity.courseNum > -1 -> {
+                studLoad()
+            }
+            else -> {
+                teachersLoad()
+            }
         }
     }
 
@@ -103,6 +111,7 @@ class MainScheduleFragment : Fragment(), AdapterView.OnItemSelectedListener {
                             android.R.layout.simple_spinner_dropdown_item,
                             studSchedule.groupNameList
                         )
+
                         groupSpinner.adapter = adapter
                         groupSpinner.onItemSelectedListener = this@MainScheduleFragment
 
@@ -131,9 +140,9 @@ class MainScheduleFragment : Fragment(), AdapterView.OnItemSelectedListener {
                 val siteText1 = depScheduleData.cafSiteText1
                 val siteText2 = depScheduleData.cafSiteText2
 
-                if(siteText1 == "Failed" || siteText2 == "Failed"){
+                if (siteText1 == "Failed" || siteText2 == "Failed") {
                     reqActivity.runOnUiThread {
-                        run(){
+                        run {
                             Toast.makeText(
                                 reqActivity,
                                 "Ошибка при загрузке расписания",
@@ -152,7 +161,7 @@ class MainScheduleFragment : Fragment(), AdapterView.OnItemSelectedListener {
                 listOfSchedule = depScheduleData.listOfSchedule
 
                 reqActivity.runOnUiThread {
-                    run(){
+                    run {
 
                         val adapter = ArrayAdapter(
                             reqActivity,
@@ -168,25 +177,35 @@ class MainScheduleFragment : Fragment(), AdapterView.OnItemSelectedListener {
 
     }
 
+    private fun classesLoad() {
+
+        classesSchedule =
+            reqActivity.classesSchedule.getClassesSchedule(reqActivity.buildingNumber).toSortedMap()
+
+        val adapter = ArrayAdapter(
+            reqActivity,
+            android.R.layout.simple_spinner_dropdown_item,
+            classesSchedule.keys.toList()
+        )
+
+        groupSpinner.adapter = adapter
+        groupSpinner.onItemSelectedListener = this@MainScheduleFragment
+
+        /**Если список групп пустой выдаем ХМММ*/
+        if (groupSpinner.count == 0) {
+            hmmImage.visibility = View.VISIBLE
+            hmmText.visibility = View.VISIBLE
+            favoriteFloatButton.visibility = View.GONE
+            groupSpinner.visibility = View.GONE
+        }
+    }
+
     override fun onNothingSelected(p0: AdapterView<*>?) {
     }
 
     /**конкретный студент*/
     override fun onItemSelected(p0: AdapterView<*>?, p1: View?, p2: Int, p3: Long) {
-        if(reqActivity.courseNum > -1){
-            onStudItemSelected()
-        }
-        else{
-            onTeacherItemSelected()
-        }
-
-    }
-
-    private fun onStudItemSelected(){
-        linkString = "https://portal.esstu.ru/${PublicData.catalog}/" +
-                studSchedule.linkNamePairList[groupSpinner.selectedItemPosition].first
-
-        /**Цвет звездочки на плавающей кнопке*/
+        /**Цвет звездочки*/
         for (i in reqActivity.fileList()) {
             if (i == groupSpinner.selectedItem.toString()) {
                 favoriteFloatButton.setImageResource(R.drawable.star_on)
@@ -195,6 +214,20 @@ class MainScheduleFragment : Fragment(), AdapterView.OnItemSelectedListener {
                 favoriteFloatButton.setImageResource(R.drawable.star_off)
             }
         }
+
+        when {
+            reqActivity.isClasses ->
+                onClassItemSelected()
+            reqActivity.courseNum > -1 ->
+                onStudItemSelected()
+            else ->
+                onTeacherItemSelected()
+        }
+    }
+
+    private fun onStudItemSelected() {
+        linkString = "https://portal.esstu.ru/${PublicData.catalog}/" +
+                studSchedule.linkNamePairList[groupSpinner.selectedItemPosition].first
 
         /**поток по загрузке страницы с расписанием*/
         object : Thread() {
@@ -309,17 +342,20 @@ class MainScheduleFragment : Fragment(), AdapterView.OnItemSelectedListener {
         }
     }
 
-    private fun onTeacherItemSelected(){
+    private fun onTeacherItemSelected() {
         //заполняем лист с расписанием по текущему преподу------------------------------------------
         localData.clear()
+
         for (i in groupSpinner.selectedItemPosition * 12..groupSpinner.selectedItemPosition * 12 + 11) {
             localData.add(listOfSchedule[i])
         }
 
         /**КНопка избранное*/
         favoriteFloatButton.setOnClickListener {
-            val linkString1 = "https://portal.esstu.ru/bakalavriat/${reqActivity.cafLinkPairArray[reqActivity.depNum].first}.htm"
-            val linkString2 = "https://portal.esstu.ru/spezialitet/${reqActivity.cafLinkPairArray[reqActivity.depNum+1].first}.htm"
+            val linkString1 =
+                "https://portal.esstu.ru/bakalavriat/${reqActivity.cafLinkPairArray[reqActivity.depNum].first}.htm"
+            val linkString2 =
+                "https://portal.esstu.ru/spezialitet/${reqActivity.cafLinkPairArray[reqActivity.depNum + 1].first}.htm"
             AddToFavButtonHandler.addToFavButtonClick(
                 favoriteFloatButton,
                 reqActivity,
@@ -331,15 +367,36 @@ class MainScheduleFragment : Fragment(), AdapterView.OnItemSelectedListener {
             )
         }
 
-        /**Цвет звездочки*/
-        for (i in reqActivity.fileList()) {
-            if (i == groupSpinner.selectedItem.toString()) {
-                favoriteFloatButton.setImageResource(R.drawable.star_on)
-                break
-            } else {
-                favoriteFloatButton.setImageResource(R.drawable.star_off)
-            }
+        /**херачим вкладки*/
+        var currentTab = TabLayout.Tab()
+        tabsCollectionAdapter = ScheduleTabsViewPagerAdapter(this, 2)
+
+        val isWeekPosFalse = try {
+            PreferenceManager.getDefaultSharedPreferences(reqActivity)
+                .all["weekPosSetting"] as Boolean
+        } catch (e: Exception) {
+            false
         }
+
+        viewPager.adapter = tabsCollectionAdapter
+        TabLayoutMediator(tabLayout, viewPager) { tab, position ->
+            tab.text = "Неделя ${(position + 1)}"
+
+            if (isWeekPosFalse) {
+                if (PublicData.currentWeek % 2 != position) currentTab = tab
+            } else {
+                if (PublicData.currentWeek % 2 == position) currentTab = tab
+            }
+        }.attach()
+
+        try {
+            currentTab.select()
+        } catch (e: IllegalArgumentException) {
+        }
+    }
+
+    private fun onClassItemSelected() {
+        localData = classesSchedule[groupSpinner.selectedItem.toString()]!!
 
         /**херачим вкладки*/
         var currentTab = TabLayout.Tab()
