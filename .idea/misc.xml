@@ -3,9 +3,14 @@
   <component name="DesignSurface">
     <option name="filePathToZoomLevelMap">
       <map>
+        <entry key="..\:/Users/Alexa/Documents/Android/2/app/src/main/res/drawable/ic_baseline_delete_24.xml" value="0.5" />
         <entry key="..\:/Users/Alexa/Documents/Android/2/app/src/main/res/layout/activity_host_view.xml" value="0.13333333333333333" />
         <entry key="..\:/Users/Alexa/Documents/Android/2/app/src/main/res/layout/dialog_load.xml" value="0.1" />
+        <entry key="..\:/Users/Alexa/Documents/Android/2/app/src/main/res/layout/fav_button_layout.xml" value="0.1" />
+        <entry key="..\:/Users/Alexa/Documents/Android/2/app/src/main/res/layout/fragment_schedule.xml" value="0.5" />
+        <entry key="..\:/Users/Alexa/Documents/Android/2/app/src/main/res/layout/main_fav.xml" value="0.25" />
         <entry key="..\:/Users/Alexa/Documents/Android/2/app/src/main/res/layout/main_page.xml" value="0.15" />
+        <entry key="..\:/Users/Alexa/Documents/Android/2/app/src/main/res/xml/root_preferences.xml" value="0.33" />
       </map>
     </option>
   </component>

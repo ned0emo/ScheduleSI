@@ -11,7 +11,7 @@ import androidx.preference.PreferenceManager
 import androidx.viewpager2.adapter.FragmentStateAdapter
 import androidx.viewpager2.widget.ViewPager2
 import com.KafSi.schedule.*
-import com.KafSi.schedule.students.StudentsScheduleData
+import com.KafSi.schedule.students.StudentsSchedule
 import com.KafSi.schedule.teachers.DepScheduleData
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.google.android.material.tabs.TabLayout
@@ -22,12 +22,13 @@ class MainScheduleFragment : Fragment(), AdapterView.OnItemSelectedListener {
 
     var localData: MutableList<MutableList<String>> = mutableListOf()
 
-    private lateinit var studSchedule: StudentsScheduleData
+    //private lateinit var studSchedule: StudentsScheduleData
     private lateinit var viewPager: ViewPager2
     private lateinit var tabLayout: TabLayout
     private lateinit var tabsCollectionAdapter: ScheduleTabsViewPagerAdapter
     private lateinit var reqActivity: HostViewActivity
     private lateinit var listOfSchedule: MutableList<MutableList<String>>
+    private lateinit var studentScheduleList: MutableList<MutableList<String>>
     private var linkString = ""
 
     private lateinit var hmmImage: ImageView
@@ -35,6 +36,7 @@ class MainScheduleFragment : Fragment(), AdapterView.OnItemSelectedListener {
     private lateinit var favoriteFloatButton: FloatingActionButton
     private lateinit var groupSpinner: Spinner
     private lateinit var classesSchedule: Map<String, MutableList<MutableList<String>>>
+    private lateinit var studentsSchedule: StudentsSchedule
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -100,16 +102,28 @@ class MainScheduleFragment : Fragment(), AdapterView.OnItemSelectedListener {
 
         object : Thread() {
             override fun run() {
-                /**Получаем расписание всех групп выбранного курса*/
-                studSchedule = StudentsScheduleData()
 
+                studentsSchedule = reqActivity.studentsSchedule
+
+                /**Получаем расписание всех групп выбранного курса*/
+                //studSchedule = StudentsScheduleData()
                 reqActivity.runOnUiThread {
                     run {
+                        val listOfGroups = studentsSchedule.getListOfGroups(reqActivity.courseNum)
+                        if(listOfGroups.size == 0){
+                            hmmImage.visibility = View.VISIBLE
+                            hmmText.visibility = View.VISIBLE
+                            favoriteFloatButton.visibility = View.GONE
+                            groupSpinner.visibility = View.GONE
+
+                            return@runOnUiThread
+                        }
+
                         /**заполняем спиннер группами*/
                         val adapter = ArrayAdapter(
                             reqActivity,
                             android.R.layout.simple_spinner_dropdown_item,
-                            studSchedule.groupNameList
+                            listOfGroups
                         )
 
                         groupSpinner.adapter = adapter
@@ -205,6 +219,9 @@ class MainScheduleFragment : Fragment(), AdapterView.OnItemSelectedListener {
 
     /**конкретный студент*/
     override fun onItemSelected(p0: AdapterView<*>?, p1: View?, p2: Int, p3: Long) {
+        if (groupSpinner.count == 0) {
+            return
+        }
         /**Цвет звездочки*/
         for (i in reqActivity.fileList()) {
             if (i == groupSpinner.selectedItem.toString()) {
@@ -226,20 +243,26 @@ class MainScheduleFragment : Fragment(), AdapterView.OnItemSelectedListener {
     }
 
     private fun onStudItemSelected() {
-        linkString = "https://portal.esstu.ru/${PublicData.catalog}/" +
-                studSchedule.linkNamePairList[groupSpinner.selectedItemPosition].first
+        //linkString = "https://portal.esstu.ru/${PublicData.catalog}/" +
+        //        studSchedule.linkNamePairList[groupSpinner.selectedItemPosition].first
 
         /**поток по загрузке страницы с расписанием*/
         object : Thread() {
             override fun run() {
+                studentScheduleList =
+                    studentsSchedule.getStudentSchedule(
+                        studentsSchedule.linkNamePairList[reqActivity.courseNum][groupSpinner.selectedItemPosition].first
+                    )
 
-                val siteScheduleText =
-                    studSchedule.getCurrentStudentPage(groupSpinner.selectedItemPosition)
+                localData = studentScheduleList
+
+                //val siteScheduleText =
+                //    studSchedule.getCurrentStudentPage(groupSpinner.selectedItemPosition)
 
                 reqActivity.runOnUiThread {
                     run {
                         /**Если инет отрубился после загрузки страницы со списком групп*/
-                        if (siteScheduleText == "Failed" || siteScheduleText.indexOf("Пары") < 0) {
+                        if (studentScheduleList.isEmpty()) {
                             Toast.makeText(
                                 reqActivity,
                                 "Ошибка при загрузке расписания",
@@ -256,14 +279,10 @@ class MainScheduleFragment : Fragment(), AdapterView.OnItemSelectedListener {
                             groupSpinner.visibility = View.VISIBLE
                         }
 
-                        if (siteScheduleText == "Failed") {
-                            return@runOnUiThread
-                        }
-
                         /**Список с расписанием по дням недели для конкретного студента*/
-                        localData = studSchedule.getCurrentStudentSchedule()
+                        //localData = studSchedule.getCurrentStudentSchedule()
 
-                        val itemCount = when (localData.size) {
+                        val itemCount = when (studentScheduleList.size) {
                             7 -> 1
                             21 -> 3
                             28 -> 4
@@ -334,10 +353,14 @@ class MainScheduleFragment : Fragment(), AdapterView.OnItemSelectedListener {
                 return@setOnClickListener
             }
 
-            AddToFavButtonHandler.addToFavButtonClick(
-                favoriteFloatButton, reqActivity,
-                localData as MutableList<List<String>>,
-                0, groupName.toString(), linkString
+            makeResultToast(
+                AddToFavButtonHandler.addToFavButtonClick(
+                    reqActivity,
+                    studentScheduleList as MutableList<List<String>>,
+                    groupName.toString(),
+                    reqActivity.studentsSchedule.link,
+                    reqActivity.studentsSchedule.catalogLink
+                )
             )
         }
     }
@@ -352,18 +375,18 @@ class MainScheduleFragment : Fragment(), AdapterView.OnItemSelectedListener {
 
         /**КНопка избранное*/
         favoriteFloatButton.setOnClickListener {
-            val linkString1 =
-                "https://portal.esstu.ru/bakalavriat/${reqActivity.cafLinkPairArray[reqActivity.depNum].first}.htm"
-            val linkString2 =
-                "https://portal.esstu.ru/spezialitet/${reqActivity.cafLinkPairArray[reqActivity.depNum + 1].first}.htm"
-            AddToFavButtonHandler.addToFavButtonClick(
-                favoriteFloatButton,
-                reqActivity,
-                localData as MutableList<List<String>>,
-                groupSpinner.selectedItemPosition,
-                groupSpinner.selectedItem.toString(),
-                linkString1,
-                linkString2
+            val linkString1 = reqActivity.cafLinkPairArray[reqActivity.depNum].first
+            val linkString2 = reqActivity.cafLinkPairArray[reqActivity.depNum + 1].first
+
+            makeResultToast(
+                AddToFavButtonHandler.addToFavButtonClick(
+                    reqActivity,
+                    localData as MutableList<List<String>>,
+                    groupSpinner.selectedItem.toString(), "",
+                    linkString1,
+                    link2 = linkString2,
+                    position = groupSpinner.selectedItemPosition
+                )
             )
         }
 
@@ -423,6 +446,56 @@ class MainScheduleFragment : Fragment(), AdapterView.OnItemSelectedListener {
         try {
             currentTab.select()
         } catch (e: IllegalArgumentException) {
+        }
+
+        /**Кнопка избранное*/
+        favoriteFloatButton.setOnClickListener {
+            val className = StringBuilder(groupSpinner.selectedItem.toString())
+
+            try {
+                className[className.indexOf('/')] = '.'
+            } catch (e: Exception) {
+            }
+
+            try {
+                reqActivity.openFileOutput(className.toString(), Context.MODE_APPEND)
+            } catch (e: Exception) {
+                Toast.makeText(
+                    reqActivity,
+                    "Ошибка при добавлении в избранное",
+                    Toast.LENGTH_SHORT
+                ).show()
+                return@setOnClickListener
+            }
+
+            makeResultToast(
+                AddToFavButtonHandler.addClassToFavButtonClick(
+                    reqActivity,
+                    localData as MutableList<List<String>>,
+                    className.toString()
+                )
+            )
+        }
+    }
+
+    private fun makeResultToast(result: Int) {
+        when (result) {
+            0 -> {
+                Toast.makeText(reqActivity, "Добавлено в избранное", Toast.LENGTH_SHORT).show()
+                favoriteFloatButton.setImageResource(R.drawable.star_on)
+            }
+            1 -> {
+                Toast.makeText(reqActivity, "Удалено из избранного", Toast.LENGTH_SHORT).show()
+                favoriteFloatButton.setImageResource(R.drawable.star_off)
+            }
+            else -> {
+                Toast.makeText(
+                    reqActivity,
+                    "Ошибка добавления в избранное. Код: AddToFavButtonHandler_$result",
+                    Toast.LENGTH_SHORT
+                ).show()
+                favoriteFloatButton.setImageResource(R.drawable.star_off)
+            }
         }
     }
 }

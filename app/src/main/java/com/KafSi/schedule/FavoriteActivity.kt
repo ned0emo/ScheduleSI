@@ -4,6 +4,7 @@ import android.content.Context
 import android.os.Bundle
 import android.view.View
 import android.widget.Spinner
+import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.constraintlayout.widget.ConstraintLayout
@@ -12,15 +13,17 @@ import androidx.preference.PreferenceManager
 import androidx.viewpager2.adapter.FragmentStateAdapter
 import androidx.viewpager2.widget.ViewPager2
 import com.KafSi.schedule.fragments.MyTabFragment
-import com.KafSi.schedule.students.StudentsScheduleData
+import com.KafSi.schedule.students.StudentsSchedule
+import com.KafSi.schedule.teachers.DepScheduleData
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.google.android.material.snackbar.Snackbar
 import com.google.android.material.tabs.TabLayout
 import com.google.android.material.tabs.TabLayoutMediator
 
+@Suppress("UNCHECKED_CAST")
 class FavoriteActivity : AppCompatActivity() {
 
-    var localData: MutableList<MutableList<String>> = mutableListOf()
+    var offlineStudentScheduleList: MutableList<MutableList<String>> = mutableListOf()
 
     private lateinit var viewPager: ViewPager2
     private lateinit var favoriteFloatButton: FloatingActionButton
@@ -37,14 +40,15 @@ class FavoriteActivity : AppCompatActivity() {
         findViewById<Spinner>(R.id.groupSpinner).visibility = View.GONE
 
         favoriteFloatButton = findViewById(R.id.favoriteFloatButton)
-        localData = PublicData.favSchedule//intent.getSerializableExtra("favSchedule") as MutableList<MutableList<String>>
+        offlineStudentScheduleList = intent.getSerializableExtra("favSchedule")
+                as MutableList<MutableList<String>>
         viewPager = findViewById(R.id.pagerlol)
         tabLayout = findViewById(R.id.tabs_main)
         title = intent.getStringExtra("name")
 
         favoriteFloatButton.setImageResource(R.drawable.star_on)
 
-        itemCount = when (localData.size) {
+        itemCount = when (offlineStudentScheduleList.size) {
             7 -> 1
             21 -> 3
             28 -> 4
@@ -57,8 +61,7 @@ class FavoriteActivity : AppCompatActivity() {
         val isWeekPosFalse = try {
             PreferenceManager.getDefaultSharedPreferences(this)
                 .all["weekPosSetting"] as Boolean
-        }
-        catch(e: Exception){
+        } catch (e: Exception) {
             false
         }
 
@@ -74,10 +77,9 @@ class FavoriteActivity : AppCompatActivity() {
         TabLayoutMediator(tabLayout, viewPager) { tab, position ->
             tab.text = "Неделя ${(position + 1)}"
 
-            if(isWeekPosFalse) {
+            if (isWeekPosFalse) {
                 if (PublicData.currentWeek % 2 != position) currentTab = tab
-            }
-            else{
+            } else {
                 if (PublicData.currentWeek % 2 == position) currentTab = tab
             }
         }.attach()
@@ -87,21 +89,50 @@ class FavoriteActivity : AppCompatActivity() {
         } catch (e: IllegalArgumentException) {
         }
 
+        if (intent.getStringExtra("link") == null) {
+            classesSchedule()
+            return
+        }
+
         updateSchedule()
 
         /**Кнопка избранное*/
         favoriteFloatButton.setOnClickListener {
-            //val groupName = intent.getStringExtra("name")
-            val linkString1 = intent.getStringExtra("link")
-            val linkString2 = intent.getStringExtra("link2")
-            val position = intent.getStringExtra("position")
 
-            AddToFavButtonHandler.addToFavButtonClick(favoriteFloatButton, this,
-                localData as MutableList<List<String>>,
-                position?.toInt() ?: 0,
+            val position = try {
+                (intent.getStringExtra("position") ?: "-1").toInt()
+            } catch (e: Exception) {
+                -1
+            }
+
+            val addToFavResult = AddToFavButtonHandler.addToFavButtonClick(
+                this,
+                offlineStudentScheduleList as MutableList<List<String>>,
                 intent.getStringExtra("name")!!,
-                linkString1!!, linkString2 ?: "_"
+                intent.getStringExtra("type") ?: "",
+                intent.getStringExtra("link")!!,
+                intent.getStringExtra("link2") ?: "",
+                position
             )
+
+            when (addToFavResult) {
+                0 -> {
+                    Toast.makeText(this, "Добавлено в избранное", Toast.LENGTH_SHORT).show()
+                    favoriteFloatButton.setImageResource(R.drawable.star_on)
+                }
+                1 -> {
+                    Toast.makeText(this, "Удалено из избранного", Toast.LENGTH_SHORT).show()
+                    favoriteFloatButton.setImageResource(R.drawable.star_off)
+                }
+                else -> {
+                    Toast.makeText(
+                        this,
+                        "Ошибка добавления в избранное. Код: AddToFavButtonHandler_$addToFavResult",
+                        Toast.LENGTH_SHORT
+                    ).show()
+                    favoriteFloatButton.setImageResource(R.drawable.star_off)
+                }
+            }
         }
     }
 
@@ -113,52 +144,75 @@ class FavoriteActivity : AppCompatActivity() {
 
         object : Thread() {
             override fun run() {
+
+                var studentSchedule: StudentsSchedule? = null
+                val name = intent.getStringExtra("name").toString()
                 var newScheduleList = mutableListOf<MutableList<String>>()
 
-                val siteTextLoad = SitePageLoadClass()
-                val siteText = siteTextLoad.getSiteText(link1)
-                val siteText2 = siteTextLoad.getSiteText(link2)
-
-                if (siteText == "Failed" || siteText.indexOf("Пары") < 0) {
-                    return
+                when (intent.getStringExtra("type")) {
+                    "bakalavriat" -> studentSchedule = StudentsSchedule(0)
+                    "spezialitet" -> studentSchedule = StudentsSchedule(1)
+                    "zo1" -> studentSchedule = StudentsSchedule(2)
+                    "zo2" -> studentSchedule = StudentsSchedule(3)
+                    //else ->
                 }
 
-                /**Избавляемся от точек в названии группы*/
-                val nameWithoutDot = try {
-                    intent.getStringExtra("name").toString()
-                        .substring(0, intent.getStringExtra("name").toString().indexOf('.'))
-                } catch (e: Exception) {
-                    intent.getStringExtra("name").toString()
-                }
+                /**фоновая загрузка расписания студентов*/
+                if (studentSchedule != null) {
+                    val siteText = studentSchedule.siteText
+                    newScheduleList = studentSchedule.getStudentSchedule(link1)
 
-                /**АлертДиалог о добавлении расписания в избранное заново*/
-                if (siteText.indexOf(nameWithoutDot) < 0 && siteText2.indexOf(nameWithoutDot) < 0) {
-                    this@FavoriteActivity.runOnUiThread {
-                        run {
-                            val attentionDialog: AlertDialog =
-                                AlertDialog.Builder(this@FavoriteActivity)
-                                    .setCancelable(false)
-                                    .setTitle("Внимание")
-                                    .setMessage("Ссылка на расписание изменилась, добавьте свое расписание заново")
-                                    .setPositiveButton("OK") { dialog, id ->
-                                        val file = getFileStreamPath(title as String?)
-                                        file.delete()
-                                        this@FavoriteActivity.finish()
-                                    }.create()
-                            attentionDialog.show()
-                            isError = true
+                    //val siteTextLoad = SitePageLoadClass()
+                    //siteText = siteTextLoad.getSiteText(link1)
+                    val siteText2 = ""//siteTextLoad.getSiteText(link2)
+
+                    if (siteText == "Failed" || siteText.indexOf("1.htm") < 0) {
+                        return
+                    }
+
+                    /**Избавляемся от точек в названии группы*/
+                    val nameWithoutDot = try {
+                        name.substring(0, name.indexOf('.'))
+                    } catch (e: Exception) {
+                        name
+                    }
+
+                    /**АлертДиалог о добавлении расписания в избранное заново*/
+                    if (siteText.indexOf(nameWithoutDot) < 0 && siteText2.indexOf(nameWithoutDot) < 0) {
+
+                        this@FavoriteActivity.runOnUiThread {
+                            run {
+                                val attentionDialog: AlertDialog =
+                                    AlertDialog.Builder(this@FavoriteActivity)
+                                        .setCancelable(false)
+                                        .setTitle("Внимание")
+                                        .setMessage("Ссылка на расписание изменилась, добавьте свое расписание заново")
+                                        .setPositiveButton("OK") { _, _ ->
+                                            val file = getFileStreamPath(title as String?)
+                                            file.delete()
+                                            this@FavoriteActivity.finish()
+                                        }.create()
+                                attentionDialog.show()
+                                isError = true
+                            }
                         }
+
+                        this.interrupt()
                     }
                 }
+                /**загрузка расписания преподов---------------------------------*/
+                else {
 
+                    val depScheduleData = DepScheduleData(link1, link2)
 
-                if (link2 == "") {/**загрузка расписания студента---------------------------*/
-                    newScheduleList = StudentsScheduleData(siteText).getCurrentStudentSchedule()
+                    if (depScheduleData.cafSiteText1 == "Failed" || depScheduleData.cafSiteText2 == "Failed"
+                        || depScheduleData.cafSiteText1.indexOf("занятий") < 1
+                        || depScheduleData.cafSiteText2.indexOf("занятий") < 1) {
+                        return
+                    }
 
-                } else {/**загрузка расписания преподов---------------------------------*/
-                    //val depSchedData = DepScheduleData()
-                    createScheduleList(siteText.split("занятий"))
-                    createScheduleList(siteText2.split("занятий"))
+                    createScheduleList(depScheduleData.cafSiteText1.split("занятий"))
+                    createScheduleList(depScheduleData.cafSiteText2.split("занятий"))
 
                     /**объединение колледжа и бакалавров*/
                     var i = 0
@@ -187,16 +241,38 @@ class FavoriteActivity : AppCompatActivity() {
                     }
 
                     /**получение расписания текущего препода*/
-                    for (i in intent.getStringExtra("position")!!
-                        .toInt() * 12..intent.getStringExtra(
-                        "position"
-                    )!!.toInt() * 12 + 11) {
-                        newScheduleList.add(listOfSchedule[i])
+                    try {
+                        for (i in intent.getStringExtra("position")!!
+                            .toInt() * 12..intent.getStringExtra(
+                            "position"
+                        )!!.toInt() * 12 + 11) {
+                            newScheduleList.add(listOfSchedule[i])
+                        }
+                    } catch (e: Exception) {
+                        if (getFileStreamPath("fav").canRead()) {
+                            val corruptFile =
+                                getFileStreamPath(getFileStreamPath("fav").readLines()[0])
+
+                            if (corruptFile.canRead()) {
+                                corruptFile.delete()
+                            }
+
+                            getFileStreamPath("fav").delete()
+                        } else {
+                            for (i in fileList()) {
+                                /**чистка всего, кроме настройки классов*/
+                                if (i != "classesNotify") {
+                                    getFileStreamPath(i).delete()
+                                }
+                            }
+                        }
+
+                        this@FavoriteActivity.finish()
                     }
                 }
 
                 /**Вывод снэкбара при различных списках*/
-                if (newScheduleList.toString() != PublicData.favSchedule.toString() && !isError) {
+                if (newScheduleList != offlineStudentScheduleList && !isError) {
                     this@FavoriteActivity.runOnUiThread {
                         run {
                             Snackbar.make(
@@ -204,21 +280,24 @@ class FavoriteActivity : AppCompatActivity() {
                                 "Доступно новое расписание",
                                 Snackbar.LENGTH_LONG
                             ).setAction("Обновить") {
-                                localData = newScheduleList
+                                offlineStudentScheduleList = newScheduleList
 
-                                val groupName = intent.getStringExtra("name")
-                                getFileStreamPath(groupName).delete()
-                                val fileOutput = openFileOutput(groupName, Context.MODE_APPEND)
+                                //val groupName = intent.getStringExtra("name")
+                                getFileStreamPath(name).delete()
+                                val fileOutput = openFileOutput(name, Context.MODE_APPEND)
 
-                                fileOutput.write((link1 + '\n').toByteArray())
-                                if (link2 != "") {
-                                    fileOutput.write((link2 + '\n').toByteArray())
+                                if (link2.length > 3) {
                                     fileOutput.write((intent.getStringExtra("position") + '\n').toByteArray())
+                                    fileOutput.write((link1 + '\n').toByteArray())
+                                    fileOutput.write((link2 + '\n').toByteArray())
+                                } else {
+                                    fileOutput.write((intent.getStringExtra("type")!! + '\n').toByteArray())
+                                    fileOutput.write((link1 + '\n').toByteArray())
                                 }
-                                fileOutput.write((groupName + '\n').toByteArray())
+                                fileOutput.write((name + '\n').toByteArray())
 
                                 var count = 1
-                                for (i in localData) {
+                                for (i in offlineStudentScheduleList) {
                                     fileOutput.write("$count;;\n".toByteArray())
                                     count++
 
@@ -272,6 +351,37 @@ class FavoriteActivity : AppCompatActivity() {
 
                 counter += 9
                 listOfSchedule.add(tmpList.drop(0) as MutableList<String>)
+            }
+        }
+    }
+
+    private fun classesSchedule() {
+        /**Кнопка избранное*/
+        favoriteFloatButton.setOnClickListener {
+
+            val addToFavResult = AddToFavButtonHandler.addClassToFavButtonClick(
+                this,
+                offlineStudentScheduleList as MutableList<List<String>>,
+                intent.getStringExtra("name")!!
+            )
+
+            when (addToFavResult) {
+                0 -> {
+                    Toast.makeText(this, "Добавлено в избранное", Toast.LENGTH_SHORT).show()
+                    favoriteFloatButton.setImageResource(R.drawable.star_on)
+                }
+                1 -> {
+                    Toast.makeText(this, "Удалено из избранного", Toast.LENGTH_SHORT).show()
+                    favoriteFloatButton.setImageResource(R.drawable.star_off)
+                }
+                else -> {
+                    Toast.makeText(
+                        this,
+                        "Ошибка добавления в избранное. Код: AddToFavButtonHandler_$addToFavResult",
+                        Toast.LENGTH_SHORT
+                    ).show()
+                    favoriteFloatButton.setImageResource(R.drawable.star_off)
+                }
             }
         }
     }

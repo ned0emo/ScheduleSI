@@ -23,7 +23,7 @@ class FacultySelectButtonsViewAdapter(
     }
 
     override fun onBindViewHolder(holder: FacultyButtonHolder, position: Int) {
-        holder.bind(facDepList[position], position, context)
+        holder.bind(facDepList[holder.absoluteAdapterPosition], context)
     }
 
     override fun getItemCount() = facDepList.size
@@ -35,7 +35,6 @@ class FacultySelectButtonsViewAdapter(
 
         fun bind(
             currentFacDepPair: Pair<List<String>, List<String>>,
-            position: Int,
             context: Context
         ) {
             if (currentFacDepPair.first[0].indexOf("META") >= 0 ||

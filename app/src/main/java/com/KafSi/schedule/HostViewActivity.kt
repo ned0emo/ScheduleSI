@@ -4,7 +4,6 @@ import android.app.Dialog
 import android.os.Bundle
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
-import androidx.appcompat.widget.Toolbar
 import androidx.core.view.get
 import androidx.drawerlayout.widget.DrawerLayout
 import androidx.navigation.NavController
@@ -13,10 +12,16 @@ import androidx.navigation.ui.AppBarConfiguration
 import androidx.navigation.ui.navigateUp
 import androidx.navigation.ui.setupActionBarWithNavController
 import androidx.navigation.ui.setupWithNavController
+import com.KafSi.schedule.classes.ClassesSchedule
+import com.KafSi.schedule.students.StudentsSchedule
 import com.google.android.material.navigation.NavigationView
-import kotlinx.coroutines.awaitAll
 
 class HostViewActivity : AppCompatActivity() {
+
+    private val BAKALAVRIAT = 0
+    private val SPEZIALITET = 1
+    private val ZO1 = 2
+    private val ZO2 = 3
 
     private lateinit var appBarConfiguration: AppBarConfiguration
     private lateinit var loadDialog: Dialog
@@ -24,21 +29,24 @@ class HostViewActivity : AppCompatActivity() {
     private var buttonIndex = -1
     private lateinit var drawerLayout: DrawerLayout
     private lateinit var navView: NavigationView
-    lateinit var classesSchedule: ClassesScheduleClass
+    lateinit var classesSchedule: ClassesSchedule
     var cafLinkPairArray = arrayOf(Pair("", ""))
     var depNum = -1
     var courseNum = -1
     var isClasses = false
     var buildingNumber = 0
+    lateinit var studentsSchedule: StudentsSchedule
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
+        loadDialog = Dialog(this)
+        loadDialog.setContentView(layoutInflater.inflate(R.layout.dialog_load, null))
+        loadDialog.show()
+
         /**Если это активити вызвано с активити кнопок факультетов,
          * то грузим преподов и переходим в функцию ниже*/
         if (intent.getBooleanExtra("isTeachers", false)) {
-
-            PublicData.isTeacher = 1
 
             cafLinkPairArray =
                 intent.getSerializableExtra("cafLinkPairArray") as Array<Pair<String, String>>
@@ -48,37 +56,41 @@ class HostViewActivity : AppCompatActivity() {
             return
         }
 
-        if(intent.getIntExtra("data", 0) == 4){
+        if (intent.getIntExtra("data", 0) == 4) {
             classesNavView()
 
             return
         }
 
-        PublicData.isTeacher = 0
         courseNum = 0
 
         buttonIndex = intent.getIntExtra("data", 0)
-        PublicData.catalog = when (buttonIndex) {
-            0 -> "bakalavriat"
-            1 -> "spezialitet"
-            2 -> "zo1"
-            3 -> "zo2"
-            else -> ""
-        }
-
-        loadDialog = Dialog(this)
-        loadDialog.setContentView(layoutInflater.inflate(R.layout.dialog_load, null))
-        loadDialog.show()
 
         /**поток загрузки сайта*/
         object : Thread() {
             override fun run() {
-                val siteText = SitePageLoadClass().getSiteText()
+                studentsSchedule = when (buttonIndex) {
+                    0 -> StudentsSchedule(BAKALAVRIAT)
+                    1 -> StudentsSchedule(SPEZIALITET)
+                    2 -> StudentsSchedule(ZO1)
+                    3 -> StudentsSchedule(ZO2)
+                    else -> StudentsSchedule(-1)
+                }
 
                 this@HostViewActivity.runOnUiThread {
                     run {
                         loadDialog.dismiss()
-                        siteTextChanged(siteText)
+
+                        if (studentsSchedule.linkNamePairList.isEmpty()) {
+                            Toast.makeText(
+                                this@HostViewActivity, "Ошибка при зарузки расписания", Toast.LENGTH_SHORT
+                            )
+                                .show()
+                            return@runOnUiThread
+                        }
+
+                        PublicData.siteText = studentsSchedule.siteText
+                        studentsNavView(studentsSchedule.siteText)
                     }
                 }
             }
@@ -86,20 +98,17 @@ class HostViewActivity : AppCompatActivity() {
     }
 
     /**после загрузки сайта*/
-    private fun siteTextChanged(siteText: String) {
-        PublicData.siteText = siteText
+    private fun studentsNavView(siteText: String) {
         navViewCreate(false)
 
         when (buttonIndex) {
             /**Магистратура*/
             1 -> {
-                PublicData.courseNum = 6
-                courseNum = 6
+                courseNum = 0
 
                 for (i in 0..5) {
                     navView.menu[i].setOnMenuItemClickListener {
-                        PublicData.courseNum = i + 6
-                        courseNum = i + 6
+                        courseNum = i
                         false
                     }
                 }
@@ -117,15 +126,19 @@ class HostViewActivity : AppCompatActivity() {
                 navController.graph.toList()[3].label = "Колледж 4 курс"
                 navController.graph.toList()[4].label = "Магистратура 1 курс"
                 navController.graph.toList()[5].label = "Магистратура 2 курс"
+
+                setupActionBarWithNavController(navController, appBarConfiguration)
+                navView.setupWithNavController(navController)
             }
             /**Бакалавриат*/
             else -> {
+                setupActionBarWithNavController(navController, appBarConfiguration)
+                navView.setupWithNavController(navController)
+
                 courseNum = 0
-                PublicData.courseNum = 0
 
                 for (i in 0..5) {
                     navView.menu[i].setOnMenuItemClickListener {
-                        PublicData.courseNum = i
                         courseNum = i
                         false
                     }
@@ -143,6 +156,7 @@ class HostViewActivity : AppCompatActivity() {
 
         depNum = 0
         navViewCreate(true)
+        loadDialog.dismiss()
 
         for (i in 0 until currentFacDepPair.size / 2) {
             navView.menu[i].title =
@@ -154,6 +168,9 @@ class HostViewActivity : AppCompatActivity() {
 
             navController.graph.toList()[i].label = currentFacDepPair[i * 2].second
         }
+
+        setupActionBarWithNavController(navController, appBarConfiguration)
+        navView.setupWithNavController(navController)
 
         for (i in 0..19) {
             if (navView.menu[i].title.indexOf("курс") > -1) {
@@ -173,51 +190,70 @@ class HostViewActivity : AppCompatActivity() {
         //navView.setupWithNavController(navController)
     }
 
-    private fun classesNavView(){
+    private fun classesNavView() {
 
-        PublicData.isTeacher = 1
-        classesSchedule = ClassesScheduleClass()
+        classesSchedule = ClassesSchedule()
         isClasses = true
 
-        loadDialog = Dialog(this)
-        loadDialog.setContentView(layoutInflater.inflate(R.layout.dialog_load, null))
-        loadDialog.show()
+        //loadDialog = Dialog(this)
+        //loadDialog.setContentView(layoutInflater.inflate(R.layout.dialog_load, null))
+        //loadDialog.show()
 
-        object: Thread(){
+        object : Thread() {
             override fun run() {
                 classesSchedule.loadSchedule()
 
-                while(!classesSchedule.isReady){
+                while (!classesSchedule.isReady) {
                     sleep(100)
                 }
 
-                runOnUiThread {
-                    run{
-                        navViewCreate(true)
+                if (classesSchedule.isError) {
+                    runOnUiThread {
+                        run {
+                            loadDialog.dismiss()
 
-                        for(i in 0..14){
-                            navView.menu[i].title = "${i+1} корпус"
-                            navController.graph.toList()[i].label = "${i+1} корпус"
+                            Toast.makeText(
+                                this@HostViewActivity,
+                                "Ошибка при загрузки расписания",
+                                Toast.LENGTH_SHORT
+                            ).show()
 
-                            navView.menu[i].setOnMenuItemClickListener {
-                                buildingNumber = i
-                                false
+                            return@runOnUiThread
+                        }
+                    }
+                } else {
+                    runOnUiThread {
+                        run {
+                            navViewCreate(true)
+
+                            for (i in 0..14) {
+                                navView.menu[i].title = "${i + 1} корпус"
+                                navController.graph.toList()[i].label = "${i + 1} корпус"
+
+                                navView.menu[i].setOnMenuItemClickListener {
+                                    buildingNumber = i
+                                    false
+                                }
                             }
-                        }
 
-                        for(i in 15..19){
-                            navView.menu[i].isEnabled = false
-                            navView.menu[i].isVisible = false
-                        }
+                            setupActionBarWithNavController(navController, appBarConfiguration)
+                            navView.setupWithNavController(navController)
 
-                        loadDialog.dismiss()
+                            for (i in 15..19) {
+                                navView.menu[i].isEnabled = false
+                                navView.menu[i].isVisible = false
+                            }
+
+                            loadDialog.dismiss()
+                        }
                     }
                 }
+
             }
         }.start()
     }
 
-    private fun navViewCreate(isNeedManyTabs: Boolean){
+    private fun navViewCreate(isNeedManyTabs: Boolean) {
         setContentView(R.layout.activity_host_view)
         setSupportActionBar(findViewById(R.id.toolbar))
 
@@ -225,7 +261,7 @@ class HostViewActivity : AppCompatActivity() {
         navView = findViewById(R.id.nav_view)
         navController = findNavController(R.id.nav_host_fragment)
 
-        if(isNeedManyTabs){
+        if (isNeedManyTabs) {
             appBarConfiguration = AppBarConfiguration(
                 setOf(
                     R.id.nav_01, R.id.nav_02,
@@ -240,8 +276,7 @@ class HostViewActivity : AppCompatActivity() {
                     R.id.nav_19, R.id.nav_20
                 ), drawerLayout
             )
-        }
-        else{
+        } else {
             appBarConfiguration = AppBarConfiguration(
                 setOf(
                     R.id.nav_01,
@@ -253,9 +288,6 @@ class HostViewActivity : AppCompatActivity() {
                 ), drawerLayout
             )
         }
-
-        setupActionBarWithNavController(navController, appBarConfiguration)
-        navView.setupWithNavController(navController)
     }
 
     /**Сокращение названий кафедр*/

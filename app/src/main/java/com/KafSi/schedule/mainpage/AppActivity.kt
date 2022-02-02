@@ -1,17 +1,18 @@
 package com.KafSi.schedule.mainpage
 
+import android.content.Context
 import android.content.Intent
 import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat.startActivity
-import androidx.fragment.app.FragmentManager
 import androidx.viewpager.widget.ViewPager
-import com.KafSi.schedule.ClassesScheduleClass
 import com.KafSi.schedule.FavoriteActivity
 import com.KafSi.schedule.PublicData
 import com.KafSi.schedule.R
 import com.google.android.material.tabs.TabLayout
 import java.io.FileNotFoundException
+import java.io.Serializable
+import java.net.URL
 import java.nio.charset.Charset
 import java.util.*
 
@@ -32,16 +33,18 @@ class AppActivity : AppCompatActivity() {
         viewPager.adapter = sectionsPagerAdapter
         val tabs: TabLayout = findViewById(R.id.tabs)
         tabs.setupWithViewPager(viewPager)
-        //tabs.tabTextColors = ColorStateList.valueOf(Color.BLACK)
         /**Конец вкладок*/
 
         /**Текущая неделя*/
-        /**ИЗМЕНЯТЬ КАЖДЫЙ ЕБАННЫЙ СУКА ГОД*/
+        /***/
         TimeZone.setDefault(TimeZone.getTimeZone("GMT+8:00"))
+
         var currentDay = Calendar.getInstance(TimeZone.getDefault()).get(Calendar.DAY_OF_YEAR)
+        //val currentWeekFile = getFileStreamPath("currentWeek")
         currentDay -= ((currentDay / 14) * 14)
 
-        if (currentDay in 4..10) {
+
+        if (currentDay in 3..9) {
             PublicData.currentWeek = 0
         } else {
             PublicData.currentWeek = 1
@@ -76,9 +79,46 @@ class AppActivity : AppCompatActivity() {
         if (favIndex >= 0) {
             val favList = filesList[favIndex]
 
-            if (favList[1].indexOf("http") < 0) {
+            /**для очного*/
+            if (favList[0].length > 3) {
                 /**Строка, с которой начинается добавление*/
-                var k = 3
+                var k = 4
+
+                val listOfList = mutableListOf<MutableList<String>>()
+
+                for (i in 0..27) {
+                    val tmpList = mutableListOf<String>()
+
+                    try {
+                        for (j in k..k + 5) {
+                            tmpList.add(favList[j])
+                        }
+                    } catch (e: Exception) {
+                        break
+                    }
+
+                    k += 7
+                    listOfList.add(tmpList)
+
+                    if (k >= favList.size) break
+                }
+
+                val intent = Intent(this@AppActivity, FavoriteActivity::class.java)
+                    .putExtra("type", favList[0])
+                    .putExtra("link", favList[1])
+                    .putExtra("name", favList[2])
+                    .putExtra("favSchedule", listOfList as Serializable)
+
+                //PublicData.favSchedule = listOfList
+                //PublicData.catalog = favList[0]
+
+                startActivity(this@AppActivity, intent, null)
+
+            }
+            /**для заочного*/
+            else if(favList[0] == "zo1"|| favList[0] == "zo2"){
+                /**Строка, с которой начинается добавление*/
+                var k = 4
 
                 val listOfList = mutableListOf<MutableList<String>>()
 
@@ -100,21 +140,18 @@ class AppActivity : AppCompatActivity() {
                 }
 
                 val intent = Intent(this@AppActivity, FavoriteActivity::class.java)
-                intent.putExtra("name", favList[1]).putExtra("link", favList[0])
-                    .putExtra("favSchedule", listOfList.toTypedArray())
+                    .putExtra("type", favList[0])
+                    .putExtra("link", favList[1])
+                    .putExtra("name", favList[2])
+                    .putExtra("favSchedule", listOfList as Serializable)
 
-                PublicData.favSchedule = listOfList
-                PublicData.isTeacher = 0
-                PublicData.catalog =
-                    if (favList[0].indexOf("zo1") < 0 && favList[0].indexOf("zo2") < 0) {
-                        "bakalavriat"
-                    } else {
-                        "zo1"
-                    }
+                //PublicData.favSchedule = listOfList
+                //PublicData.catalog = favList[0]
 
                 startActivity(this@AppActivity, intent, null)
-                /**Для преподов*/
-            } else {
+            }
+            /**Для преподов*/
+            else{
 
                 var k = 5
                 val listOfList = mutableListOf<MutableList<String>>()
@@ -134,13 +171,14 @@ class AppActivity : AppCompatActivity() {
                 }
 
                 val intent = Intent(this@AppActivity, FavoriteActivity::class.java)
-                intent.putExtra("name", favList[3]).putExtra("link", favList[0])
-                    .putExtra("link2", favList[1]).putExtra("position", favList[2])
-                    .putExtra("favSchedule", listOfList.toTypedArray())
+                    .putExtra("name", favList[3])
+                    .putExtra("link", favList[1])
+                    .putExtra("link2", favList[2])
+                    .putExtra("favSchedule", listOfList as Serializable)
+                    .putExtra("position", favList[0])
 
-                PublicData.favSchedule = listOfList
-                PublicData.isTeacher = 1
-                PublicData.catalog = ""
+                //PublicData.favSchedule = listOfList
+                //PublicData.catalog = ""
 
                 startActivity(this@AppActivity, intent, null)
             }

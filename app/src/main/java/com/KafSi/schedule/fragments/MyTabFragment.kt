@@ -41,7 +41,7 @@ class MyTabFragment : Fragment() {
         localData = try {
             (parentFragment as MainScheduleFragment).localData
         } catch (e: Exception) {
-            (requireActivity() as FavoriteActivity).localData
+            (requireActivity() as FavoriteActivity).offlineStudentScheduleList
         }
 
         return inflater.inflate(R.layout.fragment_schedule_recycler, container, false)
@@ -93,15 +93,7 @@ class MyAdapter(//для ресайклера!!!--------------------------------
     }
 
     override fun onBindViewHolder(holder: MyTabFragmentHolder, position: Int) {
-        //if (holderList.size >= itemCount) return
-
-        //holderList.add(holder)
-
-        object : Thread() {
-            override fun start() {
-                holder.bind(holderList)
-            }
-        }.start()
+        holder.bind(holderList)
     }
 
     override fun getItemCount() = if (scheduleList.size == 12) 6 else 7
@@ -125,16 +117,15 @@ class MyAdapter(//для ресайклера!!!--------------------------------
         private var isOpen = false
         private var originalHeight = 0
         private var expandedHeight = 0
-        private var index = weekPos * 6
 
         private lateinit var recyclerView: RecyclerView
         private lateinit var viewAdapter: RecyclerView.Adapter<*>
         private lateinit var viewManager: RecyclerView.LayoutManager
 
         fun bind(holderList: MutableList<MyTabFragmentHolder>) {
-            val pos = this.absoluteAdapterPosition
 
-            index += pos
+            var index = weekPos * 6 + absoluteAdapterPosition
+            val pos = absoluteAdapterPosition
 
             if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) {
                 TimeZone.setDefault(TimeZone.getTimeZone("GMT+8:00"))
@@ -163,11 +154,10 @@ class MyAdapter(//для ресайклера!!!--------------------------------
                     .get(Calendar.HOUR_OF_DAY) * 60 + Calendar.getInstance(TimeZone.getDefault())
                     .get(Calendar.MINUTE)
 
+            val isZo = scheduleList.size != 12
+
             /**зазеленяем текущую пару*/
-            if (PublicData.catalog != "zo1"
-                && PublicData.catalog != "zo2"
-                && pos + 1 == dayOfWeek
-            ) {
+            if (!isZo && pos + 1 == dayOfWeek) {
                 currentLesson = when (currentLessonTime) {
                     in 540..635 -> {
                         1
@@ -191,104 +181,108 @@ class MyAdapter(//для ресайклера!!!--------------------------------
                 }
             }
 
-            thisActivity.runOnUiThread {
-                run {
-                    //назначение заголовку дня недели-------------------------------------------------------
-                    if (PublicData.catalog != "zo1" &&
-                        PublicData.catalog != "zo2"
-                    ) {
-                        dayOfWeekTextView.text = when (pos) {
-                            0 -> "Понедельник"
-                            1 -> "Вторник"
-                            2 -> "Среда"
-                            3 -> "Четверг"
-                            4 -> "Пятница"
-                            5 -> "Суббота"
-                            else -> ""
-                        }
-                    } else {
-                        //для заочников отдельный алгоритм, у них дни недели привязаны к датам--------------
-                        try {
-                            dayOfWeekTextView.text = scheduleList[pos + weekPos * 7][0]
-                            index = pos + weekPos * 7
-                        } catch (e: Exception) {
+            //назначение заголовку дня недели и создание списка с расписанием
+            if (!isZo) {
+                dayOfWeekTextView.text = when (pos) {
+                    0 -> "Понедельник"
+                    1 -> "Вторник"
+                    2 -> "Среда"
+                    3 -> "Четверг"
+                    4 -> "Пятница"
+                    5 -> "Суббота"
+                    else -> ""
+                }
 
-                        }
+                for (i in 0..5) {
+                    try {
+                        lessonsList.add(scheduleList[index][i])
+                    } catch (e: Exception) {
+                        break
+                    }
+                }
+            }
+            else {
+                //для заочников отдельный алгоритм, у них дни недели привязаны к датам--------------
+
+                try {
+                    dayOfWeekTextView.text = scheduleList[pos + weekPos * 7][0]
+                    index = pos + weekPos * 7
+                } catch (e: Exception) {
+
+                }
+
+                for (i in 1..7) {
+                    try {
+                        lessonsList.add(scheduleList[index][i])
+                    } catch (e: Exception) {
+                        break
+                    }
+                }
+            }
+
+            /**вычисление высот карточки
+             * открытие нужной карточки
+             * исчезновение скрывающего слоя */
+            val displayMetrics = itemView.context.resources.displayMetrics
+            originalHeight = ((50 * displayMetrics.density) + 0.5).toInt()
+            lessonsRecycler.visibility = View.VISIBLE
+
+            if (expandedHeight == 0) {
+                itemView.post(Runnable {
+                    expandedHeight = dayOfWeekCardView.height + 5
+
+                    dayOfWeekCardView.layoutParams.height = originalHeight
+                    lessonsRecycler.visibility = View.GONE
+
+                    if (scheduleList.size == 12 && dayOfWeek == pos + 1) {
+                        isOpen = true
                     }
 
-                    for (i in 1..7) {
-                        try {
-                            lessonsList.add(scheduleList[index][i - PublicData.isTeacher])
-                        } catch (e: Exception) {
-                            break
+                    if (pos == 5) {
+                        for (i in holderList) {
+                            if (i.isOpen) {
+                                i.lessonsRecycler.visibility = View.VISIBLE
+                                i.lessonsRecycler.requestLayout()
+                                expandItem(i, true)
+                                break
+                            }
                         }
+                        hideWeeksLayout.animate()
+                            .alpha(0f)
+                            .setDuration(300)
+                            .setStartDelay(500)
+                            .start()
+                        //hideWeeksLayout.visibility = View.GONE
                     }
+                })
 
-                    /**вычисление высот карточки
-                     * открытие нужной карточки
-                     * исчезновение скрывающего слоя */
-                    val displayMetrics = itemView.context.resources.displayMetrics
-                    originalHeight = ((50 * displayMetrics.density) + 0.5).toInt()
-                    lessonsRecycler.visibility = View.VISIBLE
+                viewManager = LinearLayoutManager(itemView.context)
+                viewAdapter = ScheduleRecyclerAdapter(
+                    lessonsList, itemCount,
+                    currentLesson, thisActivity
+                )
+                recyclerView = lessonsRecycler.apply {
+                    setHasFixedSize(true)
+                    layoutManager = viewManager
+                    adapter = viewAdapter
+                }
+            }
 
-                    if (expandedHeight == 0) {
-                        itemView.post(Runnable {
-                            expandedHeight = dayOfWeekCardView.height + 5
-
-                            dayOfWeekCardView.layoutParams.height = originalHeight
+            /**нажатие на день недели*/
+            dayOfWeekCardView.setOnClickListener {
+                if (!isOpen) {
+                    for (i in holderList) {
+                        if (i.isOpen) {
                             lessonsRecycler.visibility = View.GONE
-
-                            if (scheduleList.size == 12 && dayOfWeek == pos + 1) {
-                                isOpen = true
-                            }
-
-                            if (pos == 5) {
-                                for (i in holderList) {
-                                    if (i.isOpen) {
-                                        i.lessonsRecycler.visibility = View.VISIBLE
-                                        i.lessonsRecycler.requestLayout()
-                                        expandItem(i, true)
-                                        break
-                                    }
-                                }
-                                hideWeeksLayout.animate()
-                                    .alpha(0f)
-                                    .setDuration(300)
-                                    .setStartDelay(500)
-                                    .start()
-                                //hideWeeksLayout.visibility = View.GONE
-                            }
-                        })
-
-                        viewManager = LinearLayoutManager(itemView.context)
-                        viewAdapter = ScheduleRecyclerAdapter(
-                            lessonsList, itemCount,
-                            currentLesson, thisActivity
-                        )
-                        recyclerView = lessonsRecycler.apply {
-                            setHasFixedSize(true)
-                            layoutManager = viewManager
-                            adapter = viewAdapter
+                            lessonsRecycler.requestLayout()
+                            i.isOpen = false
+                            expandItem(i, false)
                         }
-                    }
 
-                    /**нажатие на день недели*/
-                    dayOfWeekCardView.setOnClickListener {
-                        if (!isOpen) {
-                            for (i in holderList) {
-                                if (i.isOpen) {
-                                    lessonsRecycler.visibility = View.GONE
-                                    lessonsRecycler.requestLayout()
-                                    i.isOpen = false
-                                    expandItem(i, false)
-                                }
-
-                                lessonsRecycler.visibility = View.VISIBLE
-                                lessonsRecycler.requestLayout()
-                                isOpen = true
-                                expandItem(this@MyTabFragmentHolder, true)
-                            }
-                        }
+                        lessonsRecycler.visibility = View.VISIBLE
+                        lessonsRecycler.requestLayout()
+                        isOpen = true
+                        expandItem(this@MyTabFragmentHolder, true)
                     }
                 }
             }
@@ -337,7 +331,9 @@ class ScheduleRecyclerAdapter(
         private val lessonTime = itemView.findViewById<TextView>(R.id.lessonTime)
         private val lessonName = itemView.findViewById<TextView>(R.id.lessonName)
 
-        fun bind(position: Int, lesson: String) {
+        fun bind(lesson: String) {
+            val position = this.absoluteAdapterPosition
+
             lessonNumber.text = (position + 1).toString()
             lessonName.text = lesson
 
@@ -371,7 +367,7 @@ class ScheduleRecyclerAdapter(
 
     override fun onBindViewHolder(holder: ScheduleFragmentHolder, position: Int) {
         try {
-            holder.bind(position, lessonsList[position])
+            holder.bind(lessonsList[holder.absoluteAdapterPosition])
         } catch (e: Exception) {
             thisActivity.finish()
         }

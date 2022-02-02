@@ -7,16 +7,16 @@
 
         <SwitchPreferenceCompat
             android:defaultValue="true"
-            app:key="swipeSetting"
             app:iconSpaceReserved="false"
+            app:key="swipeSetting"
             app:summaryOff="Между неделями можно перемещаться только выбором вкладки"
             app:summaryOn="Между неделями можно перемещаться свайпами"
             app:title="Горизонтальная прокрутка" />
 
         <SwitchPreferenceCompat
             android:defaultValue="false"
-            app:key="weekPosSetting"
             app:iconSpaceReserved="false"
+            app:key="weekPosSetting"
             app:summary="Используйте, если недели определяются неверно"
             app:title="Изменить определение недель" />
 
@@ -30,12 +30,24 @@
             android:key="edit_text_preference_1"
             android:selectAllOnFocus="true"
             android:singleLine="false"
-            app:iconSpaceReserved="false"
             android:title="Разработчик - Александр Суворов
             \nКафедра «Системы информатики»
             \nВСГУТУ
-            \nВерсия 2.0.1"
-            app:enabled="false" />
+            \nВерсия 2.1.2
+            \n\nСвязь с разработчиком:
+            \nAlexandr42suv@mail.ru"
+            app:enabled="false"
+            app:iconSpaceReserved="false" />
+
+        <Preference
+            android:defaultValue="false"
+            android:key="classesNotify"
+            app:isPreferenceVisible="false" />
+
+        <Preference
+            android:defaultValue="false"
+            android:key="weekRemember"
+            app:isPreferenceVisible="false" />
     </PreferenceCategory>
 
 </PreferenceScreen>

@@ -1,9 +1,9 @@
-package com.KafSi.schedule
+package com.KafSi.schedule.classes
 
 import java.net.URL
 import java.nio.charset.Charset
 
-class ClassesScheduleClass {
+class ClassesSchedule {
     private val classesScheduleList = mutableMapOf<String, MutableList<MutableList<String>>>()
     private val buildingsList =
         listOf("1-", "2", "3", "4", "5", "6", "7", "8", "9", "0", "11", "12", "13", "14", "15")
@@ -12,6 +12,7 @@ class ClassesScheduleClass {
     private val daysOfWeekList = listOf("Пнд", "Втр", "Срд", "Чтв", "Птн", "Сбт")
 
     var isReady = false
+    var isError = false
 
     fun loadSchedule() {
         object : Thread() {
@@ -23,6 +24,8 @@ class ClassesScheduleClass {
                         )
                     )
                 } catch (e: Exception) {
+                    isError = true
+                    isReady = true
                     return
                 }
 
@@ -63,6 +66,8 @@ class ClassesScheduleClass {
                         )
                     )
                 } catch (e: Exception) {
+                    isError = true
+                    isReady = true
                     return
                 }
                 val splitSiteText2 = siteText2.split("Caf", ignoreCase = false)
@@ -129,7 +134,7 @@ class ClassesScheduleClass {
                          * и фигачим их в Мэп*/
                         if (lesson.indexOf("а.") > -1) {
                             val aIndex = lesson.indexOf("а.")
-                            val className =
+                            var className =
                                 lesson.substring(aIndex + 2, lesson.indexOf(' ', aIndex))
 
                             var lessonName =
@@ -139,9 +144,13 @@ class ClassesScheduleClass {
                                 lessonName = lessonName.replace("  ", " ")
                             }
 
+                            if(className.indexOf("и/д") > -1){
+                                className = className.replace("и/д", "")
+                            }
+
                             if (!classesScheduleList.containsKey(className)) {
                                 classesScheduleList[className] =
-                                    MutableList(12) { MutableList(7) { "" } }
+                                    MutableList(12) { MutableList(6) { "" } }
                             }
 
                             if (lessonName.length > classesScheduleList[className]!![j][k].length)

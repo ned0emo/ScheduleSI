@@ -54,7 +54,7 @@ class MainFragment : Fragment() {
 
         /**кнопка учителей*/
         teachButton.setOnClickListener {
-            PublicData.catalog = ""
+            //PublicData.catalog = ""
             //val intent = Intent(requireContext(), TeachersActivity::class.java)
             val intent = Intent(requireContext(), FacultySelectActivity::class.java)
             intent.putExtra("data", 4)
